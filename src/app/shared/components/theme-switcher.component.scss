@@ -1,0 +1,156 @@
+@use 'theme/dark_theme-colors.scss' as zenDark;
+
+.theme-toggle-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  user-select: none;
+
+  .toggle-track {
+    position: relative;
+    width: 180px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 12px;
+    transition: background 0.2s ease;
+    
+    .label {
+      font-family: 'Nunito Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      z-index: 1;
+      transition: all 0.15s ease-out;
+      cursor: pointer;
+      flex: 1;
+      text-align: center;
+      position: relative;
+      padding: 8px 0;
+      color: rgba(0, 0, 0, 0.6);
+      
+      &:hover {
+        opacity: 0.9;
+      }
+
+      &.active {
+        font-weight: 600;
+        
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: 2px;
+          left: 50%;
+          width: 16px;
+          height: 2px;
+          background: currentColor;
+          transform: translateX(-50%);
+        }
+      }
+      
+      &.light-label.active {
+        color: #FFA500;
+      }
+      
+      &.dark-label.active {
+        color: #2D3748;
+      }
+      
+      &.auto-label.active {
+        color: #4A89DC;
+      }
+    }
+  }
+
+  .theme-ball {
+    position: absolute;
+    top: -10px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 2;
+    overflow: hidden;
+    background: white;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    &.left {
+      left: 4px;
+    }
+    
+    &.center {
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    
+    &.right {
+      left: calc(100% - 48px);
+    }
+
+    mat-icon {
+      position: absolute;
+      font-size: 20px;
+      transition: all 0.2s ease-out;
+      opacity: 0;
+      transform: scale(0.9);
+      
+      &.visible {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    
+    .sun-icon {
+      color: #FFA500;
+    }
+    
+    .moon-icon {
+      color: #2D3748;
+    }
+    
+    .auto-icon {
+      color: #4A89DC;
+    }
+    
+    &:hover {
+      transform: translateX(-50%) scale(1.05);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  /* Dark mode support */
+  :host-context(.dark-theme) {
+    .toggle-track {
+      background: rgba(255, 255, 255, 0.08);
+      
+      .label {
+        color: rgba(255, 255, 255, 0.7);
+      }
+    }
+    
+    .theme-ball {
+      background: #2D3748;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    .light-label.active {
+      color: #FFD700;
+    }
+    
+    .dark-label.active {
+    color: map-get(zenDark.$primary-palette, 50);
+
+    }
+    
+    .auto-label.active {
+      color: map-get(zenDark.$primary-palette, 50);
+    }
+  }
+}

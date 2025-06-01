@@ -1,0 +1,41 @@
+<div class="theme-toggle-container">
+  <div class="toggle-track">
+    <span
+      class="label light-label"
+      [class.active]="activeTheme() === 'light'"
+      (click)="setTheme('light')"
+      >Light</span
+    >
+    <span
+      class="label dark-label"
+      [class.active]="activeTheme() === 'dark'"
+      (click)="setTheme('dark')"
+      >Dark</span
+    >
+    <span
+      class="label auto-label"
+      [class.active]="activeTheme() === 'auto'"
+      (click)="setTheme('auto')"
+      >Auto</span
+    >
+
+    <div
+      class="theme-ball"
+      [@ballAnimation]="animationTrigger()"
+      [class.left]="position() === 'left'"
+      [class.center]="position() === 'center'"
+      [class.right]="position() === 'right'"
+      (click)="cycleTheme()"
+    >
+      <mat-icon class="sun-icon" [class.visible]="activeTheme() === 'light'">
+        wb_sunny
+      </mat-icon>
+      <mat-icon class="moon-icon" [class.visible]="activeTheme() === 'dark'">
+        dark_mode
+      </mat-icon>
+      <mat-icon class="auto-icon" [class.visible]="activeTheme() === 'auto'">
+        brightness_auto
+      </mat-icon>
+    </div>
+  </div>
+</div>
