@@ -1,33 +1,49 @@
-<!-- Define the mat card -->
+<!-- Login page -->
 
-<mat-card class="login-page">
-  <mat-card-header>
-    <mat-card-title>Welcome back fellow ZenMate user!</mat-card-title>
-    <mat-card-subtitle>Please login to continue</mat-card-subtitle>
-  </mat-card-header>
+<div class="login-container" @fadeIn>
+  <mat-card class="login-card" @stagger>
+    <div class="login-header">
+      <img src="assets/ninja.jpg" alt="ZenmateLogo" class="Logo" />
+      <mat-card-header>
+        <mat-card-title>Login</mat-card-title>
+        <mat-card-subtitle>Welcome back fellow Zenmate User!</mat-card-subtitle>
+      </mat-card-header>
+    </div>
 
-  <!-- Define the fields -->
-  <!-- Email -->
-  <mat-card-content>
-    <form [formGoup]="loginForm" (ngSubmit)="onSubmit()" class="login-details">
-      <mat-form-field appearance="outline">
-        <mat-label>Email</mat-label>
-        <input
-          matInput
-          type="email"
-          formControlName="email"
-          placeholder="your@email.com"
-          required
-        />
-        <mat-icon matSuffix>email</mat-icon>
-        <!-- If no email is entered, display an error -->
-        <mat-error *ngIf="email?.haserror('required')"
-          >Email is required</mat-error
-        >
-        <mat-error *ngIf="email?.haserror('email')"
-          >Please enter a valid email</mat-error
-        >
-      </mat-form-field>
-    </form>
-  </mat-card-content>
-</mat-card>
+    <mat-card-content>
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <!-- Email -->
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <mat-error *ngIf="email?.invalid">
+            <span *ngIf="email?.errors?.['required']">Email is required</span>
+            <span *ngIf="email?.errors?.['email']"
+              >Please enter a valid email</span
+            >
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Password -->
+        <mat-form-field appearance="outline">
+          <mat-label>Password</mat-label>
+          <input
+            matInput
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="Enter your password"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="showPassword = !showPassword"
+            [attr.aria-label]="'Hide password'"
+            [attr.aria-pressed]="showPassword"
+          >
+          <mat-icon>{{showPassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+        </button>
+        </mat-form-field>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>
