@@ -1,34 +1,33 @@
 // Custom Theming for Angular Material
-// For more information: https://material.angular.io/guide/theming
-@use '@angular/material' as mat;
-@use 'sass:map';
+@use "@angular/material" as mat;
+@use "./app/shared/components/theme/dark_theme-colors" as zenDark;
+@use "./app/shared/components/theme/light-theme-colors" as zenLight;
 
-//imports for themes
-@use './app/shared/components/theme/dark_theme-colors.scss' as zenDark;
-@use './app/shared/components/theme/light-theme-colors.scss' as zenLight;
+@use "./app/shared/imports/themeImporter" as *;
 
-html {
-  color-scheme: light;
-  @include mat.theme((
-    color: zenLight.$primary-palette,
-    typography: (
-      plain-family: DM-Serif Display,
-      brand-family: serif,
-      bold-weight: 400,
+// ✅ Define your theme using your palettes
+$zenmate-dark-theme: mat.define-theme(
+  (
+    color: (
+      theme-type: dark,
+      primary: zenDark.$primary-palette,
+      tertiary: zenDark.$tertiary-palette,
     ),
-    density: 0,  
-  ));
+  )
+);
+
+// ✅ Wrap it inside a selector (like .dark-theme)
+.dark-theme {
+  @include mat.all-component-themes($zenmate-dark-theme);
 }
 
-.zen-dark-theme {
-  color-scheme: dark;
-  @include mat.theme((
-    color: zenDark.$primary-palette,
-    typography: (
-      plain-family: DM-Serif Display,
-      brand-family: serif,
-      bold-weight: 400,
-    ),
-    density: 0,
-  ));
+html,
+body,
+#app-root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
 }

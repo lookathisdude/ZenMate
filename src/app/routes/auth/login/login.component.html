@@ -1,49 +1,121 @@
-<!-- Login page -->
+<div class="login-page-wrapper">
+  <div class="login-background" @fadeIn>
+    <div class="login-container">
+      <mat-card class="login-card" @stagger>
+        <div class="login-header">
+          <mat-card-header>
+            <mat-card-title class="login-title">Welcome Back</mat-card-title>
+            <mat-card-subtitle class="login-subtitle">
+              Sign in to continue to Zenmate
+            </mat-card-subtitle>
+          </mat-card-header>
+        </div>
 
-<div class="login-container" @fadeIn>
-  <mat-card class="login-card" @stagger>
-    <div class="login-header">
-      <img src="assets/ninja.jpg" alt="ZenmateLogo" class="Logo" />
-      <mat-card-header>
-        <mat-card-title>Login</mat-card-title>
-        <mat-card-subtitle>Welcome back fellow Zenmate User!</mat-card-subtitle>
-      </mat-card-header>
-    </div>
+        <mat-card-content>
+          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+            <!-- Email -->
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Email</mat-label>
+              <input
+                matInput
+                type="email"
+                formControlName="email"
+                placeholder="your@email.com"
+              />
+              <mat-icon matPrefix>mail_outline</mat-icon>
+              <mat-error
+                *ngIf="email?.invalid && (email?.touched || isSubmited)"
+              >
+                <span *ngIf="email?.errors?.['required']"
+                  >Email is required</span
+                >
+                <span *ngIf="email?.errors?.['email']"
+                  >Please enter a valid email</span
+                >
+              </mat-error>
+            </mat-form-field>
 
-    <mat-card-content>
-      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-        <!-- Email -->
-        <mat-form-field appearance="outline">
-          <mat-label>Email</mat-label>
-          <mat-error *ngIf="email?.invalid">
-            <span *ngIf="email?.errors?.['required']">Email is required</span>
-            <span *ngIf="email?.errors?.['email']"
-              >Please enter a valid email</span
+            <!-- Password -->
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Password</mat-label>
+              <input
+                matInput
+                [type]="showPassword ? 'text' : 'password'"
+                formControlName="password"
+                placeholder="Enter your password"
+              />
+              <mat-icon matPrefix>lock_outline</mat-icon>
+              <button
+                mat-icon-button
+                matSuffix
+                type="button"
+                (click)="showPassword = !showPassword"
+                [attr.aria-label]="
+                  showPassword ? 'Hide password' : 'Show password'
+                "
+                [attr.aria-pressed]="showPassword"
+              >
+                <mat-icon>
+                  {{ showPassword ? "visibility_off" : "visibility" }}
+                </mat-icon>
+              </button>
+              <mat-error
+                *ngIf="password?.invalid && (password?.touched || isSubmited)"
+              >
+                <span *ngIf="password?.errors?.['required']"
+                  >Password is required</span
+                >
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Remember Me & Forgot Password -->
+            <div class="login-options">
+              <mat-checkbox formControlName="rememberMe" color="primary"
+                >Remember me</mat-checkbox
+              >
+              <a mat-button class="forgot-password">Forgot password?</a>
+            </div>
+
+            <!-- Submit Button -->
+            <button
+              mat-raised-button
+              color="primary"
+              type="submit"
+              class="submit-button"
+              [disabled]="loginForm.invalid"
             >
-          </mat-error>
-        </mat-form-field>
+              Sign In
+            </button>
 
-        <!-- Password -->
-        <mat-form-field appearance="outline">
-          <mat-label>Password</mat-label>
-          <input
-            matInput
-            [type]="showPassword ? 'text' : 'password'"
-            formControlName="password"
-            placeholder="Enter your password"
-          />
-          <button
-            mat-icon-button
-            matSuffix
-            type="button"
-            (click)="showPassword = !showPassword"
-            [attr.aria-label]="'Hide password'"
-            [attr.aria-pressed]="showPassword"
-          >
-          <mat-icon>{{showPassword ? 'visibility_off' : 'visibility'}}</mat-icon>
-        </button>
-        </mat-form-field>
-      </form>
-    </mat-card-content>
-  </mat-card>
+            <!-- Divider -->
+            <div class="divider">
+              <span>or continue with</span>
+            </div>
+
+            <!-- Social Login -->
+            <div class="social-login">
+              <button
+                mat-stroked-button
+                class="social-button"
+                (click)="authWithGoogle()"
+              >
+                <img src="assets/google-icon.svg" alt="Google" />
+              </button>
+              <button mat-stroked-button class="social-button">
+                <img src="assets/apple-icon.svg" alt="Apple" />
+              </button>
+              <button mat-stroked-button class="social-button">
+                <img src="assets/facebook-icon.svg" alt="Facebook" />
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+
+        <mat-card-actions class="signup-action">
+          <span>Don't have an account?</span>
+          <a mat-button color="primary">Sign up</a>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </div>
 </div>

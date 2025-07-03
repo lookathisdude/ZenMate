@@ -1,0 +1,74 @@
+:host {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.sun-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  transition: background 0.6s ease;
+  pointer-events: none;
+  user-select: none;
+  z-index: -1;
+
+  &.day {
+    background: linear-gradient(to bottom, #87ceeb 0%, #e0f7fa 100%);
+  }
+
+  &.sunrise {
+    background: linear-gradient(to bottom, #ffcc70, #ff9966, #ffd699);
+  }
+
+  &.sunset {
+    background: linear-gradient(to bottom, #ff9a9e, #fad0c4, #fbc2eb);
+  }
+
+  &.night {
+    background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
+  }
+}
+
+.sun {
+  position: absolute;
+  z-index: 2;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    user-select: none;
+  }
+}
+
+.horizon {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 40px;
+  background: linear-gradient(to bottom, #4caf50, #2e7d32);
+  z-index: 0;
+}
+
+.time-display {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(255, 255, 255, 0.75);
+  padding: 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 14px;
+  color: #333;
+  z-index: 3;
+  pointer-events: auto;
+  user-select: text;
+}

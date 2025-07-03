@@ -26,6 +26,11 @@
       [class.center]="position() === 'center'"
       [class.right]="position() === 'right'"
       (click)="cycleTheme()"
+      role="button"
+      tabindex="0"
+      (keydown.enter)="cycleTheme()"
+      (keydown.space)="cycleTheme()"
+      aria-label="Toggle theme"
     >
       <mat-icon class="sun-icon" [class.visible]="activeTheme() === 'light'">
         wb_sunny

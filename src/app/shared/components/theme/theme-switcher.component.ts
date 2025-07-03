@@ -1,5 +1,5 @@
 import { Component, effect, inject, signal } from '@angular/core';
-import { ChangeThemeService } from '../../core/services/changeTheme';
+import { ChangeThemeService } from '../../../core/services/changeTheme';
 import { MatIconModule } from '@angular/material/icon';
 import { animate, style, transition, trigger } from '@angular/animations';
 
@@ -23,6 +23,7 @@ import { animate, style, transition, trigger } from '@angular/animations';
 })
 export class ThemeSwitcherComponent {
   protected readonly changeThemeService = inject(ChangeThemeService);
+
   protected position = signal<'left' | 'center' | 'right'>('center');
   protected activeTheme = signal<'light' | 'dark' | 'auto'>('dark');
   protected animationTrigger = signal(0);
@@ -41,7 +42,7 @@ export class ThemeSwitcherComponent {
         this.position.set(isDark ? 'center' : 'left');
         this.activeTheme.set(isDark ? 'dark' : 'light');
       }
-      this.animationTrigger.update((v) => v + 1); // Trigger animation
+      this.animationTrigger.update((v) => v + 1); // Trigger animation on change
     });
   }
 
@@ -64,18 +65,18 @@ export class ThemeSwitcherComponent {
       case 'light':
         this.changeThemeService.setDarkTheme(false);
         if (this.changeThemeService.isAutoTheme()) {
-          this.changeThemeService.toggleAutoTheme();
+          this.changeThemeService.toggleAutoTheme(false);
         }
         break;
       case 'dark':
         this.changeThemeService.setDarkTheme(true);
         if (this.changeThemeService.isAutoTheme()) {
-          this.changeThemeService.toggleAutoTheme();
+          this.changeThemeService.toggleAutoTheme(false);
         }
         break;
       case 'auto':
         if (!this.changeThemeService.isAutoTheme()) {
-          this.changeThemeService.toggleAutoTheme();
+          this.changeThemeService.toggleAutoTheme(true);
         }
         break;
     }

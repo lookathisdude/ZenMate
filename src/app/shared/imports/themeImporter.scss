@@ -1,0 +1,25 @@
+@use 'sass:map';
+
+// Import your palettes
+@use '../components/theme/light-theme-colors' as light;
+@use '../components/theme/dark_theme-colors' as dark;
+
+/// Get a color from the light or dark theme palette
+/// @param {string} $theme - 'light' or 'dark'
+/// @param {string} $palette-name - e.g. 'primary', 'neutral'
+/// @param {number} $shade - e.g. 60, 95
+@function get-theme-color($theme, $palette-name, $shade) {
+  $palettes: if($theme == 'dark', dark.$palettes, light.$palettes);
+
+  $palette: map.get($palettes, $palette-name);
+  @if $palette == null {
+    @error " Palette `#{$palette-name}` not found in #{$theme} theme.";
+  }
+
+  $color: map.get($palette, $shade);
+  @if $color == null {
+    @error "Shade `#{$shade}` not found in palette `#{$palette-name}`.";
+  }
+
+  @return $color;
+}

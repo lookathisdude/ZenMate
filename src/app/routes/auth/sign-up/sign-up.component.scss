@@ -1,0 +1,128 @@
+@use '../../../shared/imports/themeImporter' as *;
+
+.signup-background {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: get-theme-color(dark, primary, 20);
+  min-height: 100dvh;
+  padding: 2rem;
+}
+
+.signup-container {
+  width: 100%;
+  max-width: 480px;
+}
+
+.signup-card {
+  padding: 2rem;
+  border-radius: 1rem;
+  background-color: get-theme-color(dark, secondary, 50);
+  color: white;
+}
+
+.signup-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.signup-subtitle {
+  opacity: 0.7;
+  font-size: 1rem;
+}
+
+.form-field {
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.password-rules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.85rem;
+  margin: 0.5rem 0 1rem;
+  span {
+    color: #aaa;
+    &.valid {
+      color: #4caf50;
+    }
+  }
+}
+
+.strength-bar {
+  height: 6px;
+  background: #333;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+
+  .bar {
+    height: 100%;
+    transition: width 0.3s ease;
+  }
+
+  .weak {
+    width: 33%;
+    background: #e74c3c;
+  }
+
+  .medium {
+    width: 66%;
+    background: #f39c12;
+  }
+
+  .strong {
+    width: 100%;
+    background: #2ecc71;
+  }
+
+  .strength-label {
+    font-size: 0.75rem;
+    color: #aaa;
+    margin-top: 0.25rem;
+  }
+}
+
+.divider {
+  text-align: center;
+  margin: 2rem 0;
+  color: #aaa;
+  position: relative;
+
+  span {
+    background: #1e1e1e;
+    padding: 0 1rem;
+  }
+
+  &::before,
+  &::after {
+    content: '';
+    height: 1px;
+    background: #444;
+    position: absolute;
+    top: 50%;
+    width: 40%;
+  }
+
+  &::before {
+    left: 0;
+  }
+
+  &::after {
+    right: 0;
+  }
+}
+
+.social-login {
+  display: flex;
+  justify-content: space-between;
+  button img {
+    height: 24px;
+  }
+}
+
+.submit-button {
+  width: 100%;
+  margin-top: 1.5rem;
+}

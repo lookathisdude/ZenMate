@@ -14,13 +14,13 @@ import {
   ReactiveFormsModule,
 } from '@angular/forms';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { ThemePalette } from '@angular/material/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-login',
@@ -36,6 +36,7 @@ import { CommonModule } from '@angular/common';
     MatButtonModule,
     MatSnackBarModule,
     MatIconModule,
+    MatCheckboxModule,
   ],
   animations: [
     trigger('fadeIn', [
@@ -68,86 +69,30 @@ import { CommonModule } from '@angular/common';
 })
 export class LoginComponent {
   loginForm: FormGroup;
-  passwordStrength: number = 0;
   showPassword = false;
-  strengthColor: ThemePalette;
   isSubmited = false;
 
-  requirements = [
-    { description: 'At least 8 characters', regex: /.{8,}/ },
-    { description: 'At least 1 uppercase letter', regex: /[A-Z]/ },
-    { description: 'At least 1 lowercase letter', regex: /[a-z]/ },
-    { description: 'At least 1 number', regex: /\d/ },
-    { description: 'At least 1 special character', regex: /[@$!%*?&]/ },
-  ];
-
-  constructor(private formBuilder: FormBuilder, private snackBar: MatSnackBar) {
-    this.loginForm = this.formBuilder.group({
+  constructor(private fb: FormBuilder, private snackBar: MatSnackBar) {
+    this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: [
-        '',
-        [
-          Validators.required,
-          Validators.minLength(8),
-          Validators.pattern(
-            /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
-          ),
-        ],
-      ],
+      password: ['', [Validators.required]], // Only required, no minlength or pattern
+      rememberMe: [false],
     });
-
-    this.loginForm.get('password')?.valueChanges.subscribe((value) => {
-      this.calculatePasswordStrength(value);
-    });
-  }
-
-  calculatePasswordStrength(password: string) {
-    let passwordStrength = 0;
-    this.requirements.forEach((requirement) => {
-      if (requirement.regex.test(password)) passwordStrength += 1;
-    });
-
-    this.passwordStrength = Math.min(Math.floor(passwordStrength / 1.66), 3);
-
-    switch (this.passwordStrength) {
-      case 0:
-        this.strengthColor = undefined;
-        break;
-      case 1:
-        this.strengthColor = 'warn';
-        break;
-      case 2:
-        this.strengthColor = 'accent';
-        break;
-      case 3:
-        this.strengthColor = 'primary';
-        break;
-    }
-  }
-
-  getPasswordStatus(regex: RegExp): boolean {
-    return regex.test(this.loginForm.get('password')?.value);
   }
 
   onSubmit() {
     this.isSubmited = true;
 
     if (this.loginForm.valid) {
-      if (this.passwordStrength < 2) {
-        this.snackBar.open(
-          'Password is too weak. Please strengthen your password.',
-          'OK',
-          {
-            duration: 5000,
-            panelClass: ['mat-toolbar', 'mat-warn'],
-          }
-        );
-        return;
-      }
-      console.log('Form submitted:', this.loginForm.value);
+      // TODO: Add real login logic here
       this.snackBar.open('Login successful!', 'OK', {
         duration: 3000,
         panelClass: ['mat-toolbar', 'mat-primary'],
+      });
+    } else {
+      this.snackBar.open('Please enter a valid email and password.', 'OK', {
+        duration: 3000,
+        panelClass: ['mat-toolbar', 'mat-warn'],
       });
     }
   }
@@ -158,5 +103,9 @@ export class LoginComponent {
 
   get password() {
     return this.loginForm.get('password');
+  }
+
+  authWithGoogle() {
+    this.snackBar.open('Signing in with Google...', 'OK', { duration: 3000 });
   }
 }

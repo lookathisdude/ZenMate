@@ -1,4 +1,4 @@
-@use 'theme/dark_theme-colors.scss' as zenDark;
+@use '../../imports/themeImporter' as *;
 
 .theme-toggle-container {
   position: fixed;
@@ -145,12 +145,12 @@
     }
     
     .dark-label.active {
-    color: map-get(zenDark.$primary-palette, 50);
+    color: get-theme-color(dark, primary, 50);
 
     }
     
     .auto-label.active {
-      color: map-get(zenDark.$primary-palette, 50);
+      color: get-theme-color(dark, primary, 40);
     }
   }
 }
