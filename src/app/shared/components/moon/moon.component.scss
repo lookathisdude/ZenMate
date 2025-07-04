@@ -1,0 +1,19 @@
+.moon-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  z-index: -1;
+  height: 600px; /* fixed height */
+  background-color: #000; /* black night */
+  overflow: visible;
+  user-select: none;
+}
+
+.moon-image {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  border-radius: 50%;
+  background-color: transparent;
+}
