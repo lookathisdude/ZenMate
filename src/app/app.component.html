@@ -1,4 +1,4 @@
 <zen-theme-switcher></zen-theme-switcher>
-<app-sun-path></app-sun-path>
-<app-moon-path></app-moon-path>
+<app-sun-path *ngIf="showSun" (sunDone)="onSunDone($event)"></app-sun-path>
+<app-moon-path *ngIf="showMoon" (moonDone)="onMoonDone($event)"></app-moon-path>
 <router-outlet></router-outlet>

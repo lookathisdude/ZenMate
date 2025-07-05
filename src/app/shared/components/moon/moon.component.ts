@@ -9,6 +9,8 @@ import {
   PLATFORM_ID,
   ViewChild,
   ElementRef,
+  Output,
+  EventEmitter,
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { fromEvent, Subscription, animationFrameScheduler } from 'rxjs';
@@ -16,6 +18,7 @@ import { throttleTime } from 'rxjs/operators';
 import * as SunCalc from 'suncalc';
 import { format, isAfter, isBefore } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
+import { SunMoonService } from '../../../core/services/SunMoon.service';
 
 @Component({
   selector: 'app-moon-path',
@@ -35,6 +38,7 @@ export class MoonComponent implements OnInit, OnDestroy {
   moonPhase = 0; // 0 to 1
   moonIllumination = 0; // 0 to 1
   isVisible = false;
+  @Output() moonDone = new EventEmitter<boolean>();
 
   currentTime = new Date();
   moonriseTime: Date | null = null;
@@ -52,7 +56,8 @@ export class MoonComponent implements OnInit, OnDestroy {
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
     private zone: NgZone,
-    private cd: ChangeDetectorRef
+    private cd: ChangeDetectorRef,
+    private sunMoonService: SunMoonService  // <-- inject service here
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
   }
@@ -128,6 +133,11 @@ export class MoonComponent implements OnInit, OnDestroy {
     }
 
     const currentTime = new Date();
+
+    // You can check night here via service if needed
+    const night = this.sunMoonService.isNight(lat, lng, currentTime);
+    this.isVisible = !night;
+
     const moonData = SunCalc.getMoonIllumination(currentTime);
     this.moonPhase = moonData.phase;
     this.moonIllumination = moonData.fraction;
@@ -207,6 +217,7 @@ export class MoonComponent implements OnInit, OnDestroy {
 
     if (visible !== this.isVisible || force) {
       this.isVisible = visible;
+      this.moonDone.emit(!visible); // Done = true when not visible
       this.cd.markForCheck();
     }
 
@@ -243,13 +254,6 @@ export class MoonComponent implements OnInit, OnDestroy {
       Math.max(elapsedVisibleTime / totalVisibleTime, 0),
       1
     );
-
-    // DEBUG LOGS - remove/comment in production
-    console.log('Now:', now.toLocaleTimeString());
-    console.log('Moonrise:', this.moonriseTime?.toLocaleTimeString());
-    console.log('Moonset:', this.moonsetTime?.toLocaleTimeString());
-    console.log('Progress:', progress);
-    console.log('Visible:', visible);
 
     const x = containerWidth * progress;
     const maxHeight = containerHeight * 0.5;

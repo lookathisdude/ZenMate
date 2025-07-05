@@ -7,6 +7,8 @@ import {
   ChangeDetectionStrategy,
   Inject,
   PLATFORM_ID,
+  Output,
+  EventEmitter,
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { fromEvent, Subscription, animationFrameScheduler } from 'rxjs';
@@ -14,7 +16,7 @@ import { throttleTime } from 'rxjs/operators';
 import * as SunCalc from 'suncalc';
 import { format, isAfter, isBefore } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
-
+import { SunMoonService } from '../../../core/services/SunMoon.service';
 @Component({
   selector: 'app-sun-path',
   standalone: true,
@@ -34,6 +36,7 @@ export class SunComponent implements OnInit, OnDestroy {
   timeOfDay: 'night' | 'sunrise' | 'day' | 'sunset' = 'day';
 
   private sunSize = 160;
+  @Output() sunDone = new EventEmitter<boolean>();
   private lastPositionUpdate = 0;
   private isBrowser: boolean;
 
@@ -44,7 +47,8 @@ export class SunComponent implements OnInit, OnDestroy {
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
     private zone: NgZone,
-    private cd: ChangeDetectorRef
+    private cd: ChangeDetectorRef,
+    private sunMoonService: SunMoonService // <-- inject service here
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
   }
@@ -105,6 +109,9 @@ export class SunComponent implements OnInit, OnDestroy {
 
     this.sunriseTime = toZonedTime(times.sunrise, this.timezone);
     this.sunsetTime = toZonedTime(times.sunset, this.timezone);
+
+    // Use service method to check if it's night (optional, for your logic)
+    this.isDay = !this.sunMoonService.isNight(lat, lng, now);
 
     this.updateTimeOfDay();
     this.updateSunPosition(true);
@@ -186,11 +193,14 @@ export class SunComponent implements OnInit, OnDestroy {
     if (!container) return;
 
     if (!isAfter(now, this.sunriseTime) || !isBefore(now, this.sunsetTime)) {
+      this.sunDone.emit(true); // Sun is no longer visible
       this.targetPosition = {
         x: -this.sunSize,
         y: container.clientHeight + this.sunSize,
       };
       return;
+    } else {
+      this.sunDone.emit(false); // Sun is visible
     }
 
     const width = container.clientWidth;
