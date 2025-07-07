@@ -1,3 +1,5 @@
+@use "../../imports/themeImporter" as *;
+
 .moon-container {
   position: fixed;
   top: 0;
@@ -5,7 +7,13 @@
   width: 100vw;
   z-index: -1;
   height: 600px; /* fixed height */
-  background-color: #000; /* black night */
+  background-color: linear-gradient(
+    to bottom,
+    get-theme-color(dark, primary, 10),
+    get-theme-color(dark, tertiary, 20),
+    get-theme-color(dark, neutral, 12),
+    get-theme-color(dark, neutral, 6)
+  ); /* black night */
   overflow: visible;
   user-select: none;
 }

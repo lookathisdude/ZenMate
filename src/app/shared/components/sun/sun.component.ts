@@ -17,6 +17,8 @@ import * as SunCalc from 'suncalc';
 import { format, isAfter, isBefore } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { SunMoonService } from '../../../core/services/SunMoon.service';
+import { TimeService } from '../../../core/services/time.service';
+
 @Component({
   selector: 'app-sun-path',
   standalone: true,
@@ -30,8 +32,8 @@ export class SunComponent implements OnInit, OnDestroy {
   targetPosition = { x: 0, y: 0 };
   isDay = false;
   currentTime = new Date();
-  sunriseTime: Date = new Date();
-  sunsetTime: Date = new Date();
+  sunriseTime?: Date;
+  sunsetTime?: Date;
   timezone = 'UTC';
   timeOfDay: 'night' | 'sunrise' | 'day' | 'sunset' = 'day';
 
@@ -39,16 +41,18 @@ export class SunComponent implements OnInit, OnDestroy {
   @Output() sunDone = new EventEmitter<boolean>();
   private lastPositionUpdate = 0;
   private isBrowser: boolean;
+  private sunVisible = false; // track current visibility to avoid redundant emits
 
-  private resizeSubscription!: Subscription;
-  private animationSubscription!: Subscription;
+  private resizeSubscription?: Subscription;
+  private animationSubscription?: Subscription;
   private geolocationWatchId?: number;
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
     private zone: NgZone,
     private cd: ChangeDetectorRef,
-    private sunMoonService: SunMoonService // <-- inject service here
+    private sunMoonService: SunMoonService,
+    private timeService: TimeService
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
   }
@@ -56,7 +60,6 @@ export class SunComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (!this.isBrowser) return;
 
-    this.timeOfDay = 'day';
     this.setInitialPosition();
     this.getLocation();
     this.handleResize();
@@ -73,16 +76,13 @@ export class SunComponent implements OnInit, OnDestroy {
   }
 
   private setInitialPosition(): void {
-    this.sunPosition = {
-      x: window.innerWidth / 2,
-      y: window.innerHeight,
-    };
+    this.sunPosition = { x: window.innerWidth / 2, y: window.innerHeight };
     this.targetPosition = { ...this.sunPosition };
   }
 
   private getLocation(): void {
     if (!navigator.geolocation) {
-      this.calculateSunTimes(-36.8485, 174.7633); // Auckland fallback
+      this.updateSunVisibility(false);
       return;
     }
 
@@ -92,7 +92,10 @@ export class SunComponent implements OnInit, OnDestroy {
           this.calculateSunTimes(pos.coords.latitude, pos.coords.longitude);
         });
       },
-      () => this.calculateSunTimes(-36.8485, 174.7633),
+      (err) => {
+        console.warn('Geolocation error:', err.message);
+        this.updateSunVisibility(false);
+      },
       { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
     );
   }
@@ -107,10 +110,30 @@ export class SunComponent implements OnInit, OnDestroy {
       this.timezone = 'UTC';
     }
 
-    this.sunriseTime = toZonedTime(times.sunrise, this.timezone);
-    this.sunsetTime = toZonedTime(times.sunset, this.timezone);
+    if (times.sunrise && times.sunset) {
+      const sunrise = toZonedTime(times.sunrise, this.timezone);
+      const sunset = toZonedTime(times.sunset, this.timezone);
 
-    // Use service method to check if it's night (optional, for your logic)
+      if (isNaN(sunrise.getTime()) || isNaN(sunset.getTime())) {
+        this.sunriseTime = undefined;
+        this.sunsetTime = undefined;
+        this.updateSunVisibility(false);
+        this.cd.markForCheck();
+        return;
+      }
+
+      this.sunriseTime = sunrise;
+      this.sunsetTime = sunset;
+
+      this.updateSunValues();
+    } else {
+      this.sunriseTime = undefined;
+      this.sunsetTime = undefined;
+      this.updateSunVisibility(false);
+      this.cd.markForCheck();
+      return;
+    }
+
     this.isDay = !this.sunMoonService.isNight(lat, lng, now);
 
     this.updateTimeOfDay();
@@ -120,6 +143,17 @@ export class SunComponent implements OnInit, OnDestroy {
   private updateTimeOfDay(): void {
     const now = new Date();
     const buffer = 15 * 60 * 1000;
+
+    if (
+      !this.sunriseTime ||
+      !this.sunsetTime ||
+      isNaN(this.sunriseTime.getTime()) ||
+      isNaN(this.sunsetTime.getTime())
+    ) {
+      this.timeOfDay = 'day';
+      this.cd.markForCheck();
+      return;
+    }
 
     const isDaytime =
       isAfter(now, this.sunriseTime) && isBefore(now, this.sunsetTime);
@@ -142,7 +176,7 @@ export class SunComponent implements OnInit, OnDestroy {
       this.timeOfDay = 'day';
     }
 
-    this.cd.detectChanges();
+    this.cd.markForCheck();
   }
 
   private handleResize(): void {
@@ -166,9 +200,8 @@ export class SunComponent implements OnInit, OnDestroy {
       }
 
       this.animateSun();
-      this.animationSubscription = animationFrameScheduler.schedule(() =>
-        this.startAnimationLoop()
-      );
+
+      this.startAnimationLoop();
     });
   }
 
@@ -190,17 +223,33 @@ export class SunComponent implements OnInit, OnDestroy {
     this.currentTime = now;
 
     const container = document.querySelector('.sun-container') as HTMLElement;
-    if (!container) return;
+    if (!container) {
+      this.updateSunVisibility(false);
+      return;
+    }
 
-    if (!isAfter(now, this.sunriseTime) || !isBefore(now, this.sunsetTime)) {
-      this.sunDone.emit(true); // Sun is no longer visible
+    if (
+      !this.sunriseTime ||
+      !this.sunsetTime ||
+      isNaN(this.sunriseTime.getTime()) ||
+      isNaN(this.sunsetTime.getTime())
+    ) {
+      this.updateSunVisibility(false);
+      return;
+    }
+
+    const afterSunrise = isAfter(now, this.sunriseTime);
+    const beforeSunset = isBefore(now, this.sunsetTime);
+
+    if (!(afterSunrise && beforeSunset)) {
+      this.updateSunVisibility(false);
       this.targetPosition = {
         x: -this.sunSize,
         y: container.clientHeight + this.sunSize,
       };
       return;
     } else {
-      this.sunDone.emit(false); // Sun is visible
+      this.updateSunVisibility(true);
     }
 
     const width = container.clientWidth;
@@ -214,6 +263,14 @@ export class SunComponent implements OnInit, OnDestroy {
     const y = height - Math.sin(Math.PI * progress) * (height * 0.7);
 
     this.targetPosition = { x, y };
+  }
+
+  private updateSunVisibility(visible: boolean) {
+    if (this.sunVisible !== visible) {
+      this.sunVisible = visible;
+      this.sunDone.emit(!visible); // emit true when hidden, false when visible
+      this.cd.markForCheck();
+    }
   }
 
   get sunStyle() {
@@ -230,12 +287,12 @@ export class SunComponent implements OnInit, OnDestroy {
     };
   }
 
-  get timeDisplay() {
-    return {
-      current: format(this.currentTime, 'HH:mm'),
-      sunrise: format(this.sunriseTime, 'HH:mm'),
-      sunset: format(this.sunsetTime, 'HH:mm'),
-      timezone: this.timezone,
-    };
+  private updateSunValues() {
+    this.timeService.updatePartialData({
+      currentTime: this.currentTime,
+      sunriseTime: this.sunriseTime,
+      sunsetTime: this.sunsetTime,
+      timeZone: this.timezone,
+    });
   }
 }

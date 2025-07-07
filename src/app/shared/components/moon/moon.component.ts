@@ -19,6 +19,7 @@ import * as SunCalc from 'suncalc';
 import { format, isAfter, isBefore } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { SunMoonService } from '../../../core/services/SunMoon.service';
+import { TimeService } from '../../../core/services/time.service';
 
 @Component({
   selector: 'app-moon-path',
@@ -38,6 +39,8 @@ export class MoonComponent implements OnInit, OnDestroy {
   moonPhase = 0; // 0 to 1
   moonIllumination = 0; // 0 to 1
   isVisible = false;
+  lat?: number;
+  lng?: number;
   @Output() moonDone = new EventEmitter<boolean>();
 
   currentTime = new Date();
@@ -57,7 +60,8 @@ export class MoonComponent implements OnInit, OnDestroy {
     @Inject(PLATFORM_ID) private platformId: Object,
     private zone: NgZone,
     private cd: ChangeDetectorRef,
-    private sunMoonService: SunMoonService  // <-- inject service here
+    private sunMoonService: SunMoonService,
+    private timeService: TimeService
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
   }
@@ -66,7 +70,6 @@ export class MoonComponent implements OnInit, OnDestroy {
     if (!this.isBrowser) return;
 
     this.initializeMoonPosition();
-    this.isVisible = true;
     this.getLocation();
     this.setupResizeListener();
     this.startAnimationLoop();
@@ -78,49 +81,31 @@ export class MoonComponent implements OnInit, OnDestroy {
   }
 
   private initializeMoonPosition(): void {
-    this.moonPosition = {
-      x: window.innerWidth * 0.2,
-      y: 600 * 0.8,
-    };
+    this.moonPosition = { x: window.innerWidth * 0.2, y: 600 * 0.8 };
     this.targetPosition = { ...this.moonPosition };
   }
 
   private getLocation(): void {
-    if (!this.isBrowser) {
-      this.useDefaultLocation();
+    if (!this.isBrowser || !navigator.geolocation) {
+      // If no geolocation or browser, hide moon and emit done
+      this.moonDone.emit(true);
       return;
     }
 
-    if (navigator.geolocation) {
-      this.setupGeolocationWatch();
-    } else {
-      this.useDefaultLocation();
-    }
-  }
-
-  private useDefaultLocation(): void {
-    this.calculateMoonData(-36.8485, 174.7633);
-    this.cd.markForCheck();
-  }
-
-  private setupGeolocationWatch(): void {
     this.geolocationWatchId = navigator.geolocation.watchPosition(
-      (pos) => this.handlePositionSuccess(pos),
-      (err) => this.handlePositionError(err),
+      (pos) =>
+        this.zone.run(() => {
+          this.lat = pos.coords.latitude;
+          this.lng = pos.coords.longitude;
+          this.calculateMoonData(this.lat, this.lng);
+          this.cd.markForCheck();
+        }),
+      (err) => {
+        console.warn('Geolocation error:', err.message);
+        this.moonDone.emit(true);
+      },
       { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
     );
-  }
-
-  private handlePositionSuccess(pos: GeolocationPosition): void {
-    this.zone.run(() => {
-      this.calculateMoonData(pos.coords.latitude, pos.coords.longitude);
-      this.cd.markForCheck();
-    });
-  }
-
-  private handlePositionError(err: GeolocationPositionError): void {
-    console.warn('Geolocation error, using default:', err.message);
-    this.useDefaultLocation();
   }
 
   private calculateMoonData(lat: number, lng: number): void {
@@ -133,10 +118,10 @@ export class MoonComponent implements OnInit, OnDestroy {
     }
 
     const currentTime = new Date();
+    this.currentTime = currentTime;
 
-    // You can check night here via service if needed
     const night = this.sunMoonService.isNight(lat, lng, currentTime);
-    this.isVisible = !night;
+    this.isVisible = night; // Moon visible only at night
 
     const moonData = SunCalc.getMoonIllumination(currentTime);
     this.moonPhase = moonData.phase;
@@ -154,11 +139,14 @@ export class MoonComponent implements OnInit, OnDestroy {
         );
       }
     } else {
-      this.moonriseTime = new Date(currentTime.getTime() - 2 * 60 * 60 * 1000);
-      this.moonsetTime = new Date(currentTime.getTime() + 2 * 60 * 60 * 1000);
+      this.moonriseTime = null;
+      this.moonsetTime = null;
     }
 
+    this.updateMoonValues();
+
     this.updateMoonPosition(true);
+    this.moonDone.emit(!this.isVisible);
   }
 
   private setupResizeListener(): void {
@@ -175,7 +163,9 @@ export class MoonComponent implements OnInit, OnDestroy {
       const now = Date.now();
       if (now - this.lastPositionUpdate > 60000) {
         this.currentTime = new Date();
-        this.updateMoonPosition();
+        if (this.lat !== undefined && this.lng !== undefined) {
+          this.calculateMoonData(this.lat, this.lng);
+        }
         this.lastPositionUpdate = now;
       }
       this.animateMoon();
@@ -202,35 +192,19 @@ export class MoonComponent implements OnInit, OnDestroy {
     const now = new Date();
     this.currentTime = now;
 
-    let visible = false;
-    if (this.moonriseTime && this.moonsetTime) {
-      if (this.moonriseTime > this.moonsetTime) {
-        visible =
-          isAfter(now, this.moonriseTime) || isBefore(now, this.moonsetTime);
-      } else {
-        visible =
-          isAfter(now, this.moonriseTime) && isBefore(now, this.moonsetTime);
-      }
-    } else {
-      visible = this.moonriseTime === null && this.moonsetTime === null;
-    }
-
-    if (visible !== this.isVisible || force) {
-      this.isVisible = visible;
-      this.moonDone.emit(!visible); // Done = true when not visible
-      this.cd.markForCheck();
-    }
-
-    const container = this.containerRef?.nativeElement;
-    if (!container) return;
-
     if (!this.isVisible) {
+      const container = this.containerRef?.nativeElement;
+      if (!container) return;
+
       this.targetPosition = {
         x: -this.moonSize,
         y: container.clientHeight + this.moonSize,
       };
       return;
     }
+
+    const container = this.containerRef?.nativeElement;
+    if (!container) return;
 
     const containerWidth = container.clientWidth;
     const containerHeight = container.clientHeight;
@@ -283,9 +257,19 @@ export class MoonComponent implements OnInit, OnDestroy {
 
   get moonImgStyle() {
     const minOpacity = 0.2;
-    const opacity = this.isVisible
+
+    // Check if day or night based on latest lat/lng + currentTime
+    const isDaytime =
+      this.lat !== undefined &&
+      this.lng !== undefined &&
+      !this.sunMoonService.isNight(this.lat, this.lng, this.currentTime);
+
+    const baseOpacity = this.isVisible
       ? Math.max(this.moonIllumination, minOpacity)
       : 0;
+
+    // Dim moon during day but keep visible
+    const finalOpacity = isDaytime ? baseOpacity * 0.3 : baseOpacity;
 
     return {
       transform: `translate(${this.moonPosition.x - this.moonSize / 2}px, ${
@@ -293,7 +277,7 @@ export class MoonComponent implements OnInit, OnDestroy {
       }px)`,
       width: `${this.moonSize}px`,
       height: `${this.moonSize}px`,
-      opacity,
+      opacity: finalOpacity,
       transition: 'opacity 1s ease, transform 2s linear',
       'will-change': 'transform, opacity',
       position: 'absolute',
@@ -348,5 +332,12 @@ export class MoonComponent implements OnInit, OnDestroy {
     if (this.isBrowser && this.geolocationWatchId !== undefined) {
       navigator.geolocation.clearWatch(this.geolocationWatchId);
     }
+  }
+
+  private updateMoonValues() {
+    this.timeService.updatePartialData({
+      moonriseTime: this.moonriseTime,
+      moonsetTime: this.moonsetTime,
+    });
   }
 }

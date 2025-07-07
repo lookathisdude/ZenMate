@@ -1,0 +1,23 @@
+<div *ngIf="timeDisplayData$ | async as time" class="time-container">
+  <mat-card class="flip-card" [@flip]="flipState">
+    <strong>Current:</strong> {{ formatTime(time.currentTime) }}
+  </mat-card>
+
+  <mat-card>
+    <strong>Sunrise:</strong> {{ formatTime(time.sunriseTime) }}
+  </mat-card>
+
+  <mat-card>
+    <strong>Sunset:</strong> {{ formatTime(time.sunsetTime) }}
+  </mat-card>
+
+  <mat-card>
+    <strong>Moonrise:</strong> {{ formatTime(time.moonriseTime) }}
+  </mat-card>
+
+  <mat-card>
+    <strong>Moonset:</strong> {{ formatTime(time.moonsetTime) }}
+  </mat-card>
+
+  <mat-card> <strong>Timezone:</strong> {{ time.timeZone }} </mat-card>
+</div>
