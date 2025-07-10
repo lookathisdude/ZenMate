@@ -1,0 +1,12 @@
+type Query {
+    allUsers: [zenUser!]!
+    userById(id: ID!): zenUser
+    userByUsername(username: String!): zenUser
+    userByEmail(email: String!): zenUser
+}
+
+type Mutation {
+    signUp(input: SignUpInput!): zenUser!
+    updateUser(id: ID!, input: UpdateUserInput): zenUser!
+    deleteUser(id: ID!): zenUser!
+}
