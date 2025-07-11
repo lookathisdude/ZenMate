@@ -1,17 +1,22 @@
 package com.ZenMate.ZenMateBackend.service;
 
+import com.ZenMate.ZenMateBackend.DTO.RegisterRequest;
 import com.ZenMate.ZenMateBackend.DTO.ZenUserInput;
+import com.ZenMate.ZenMateBackend.entity.ConfirmationEmailEntity;
 import com.ZenMate.ZenMateBackend.entity.ZenUserEntity;
 import com.ZenMate.ZenMateBackend.interfaces.ZenUserInterface;
+import com.ZenMate.ZenMateBackend.repository.ConfirmationEmailRepository;
 import com.ZenMate.ZenMateBackend.repository.ZenUserRepository;
 import jakarta.persistence.EntityExistsException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -22,14 +27,23 @@ import java.util.function.Consumer;
 public class ZenUserService implements ZenUserInterface {
 
     private final ZenUserRepository zenUserRepository;
+    private final ConfirmationEmailRepository confirmationEmailRepository;
     private final Validator validator;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+    private final ConfirmationEmailService confirmationEmailService;
+
+    @Value("${app.email.confirmation.expiration-hours}")
+    private int expirationHours;
 
     // Inject PasswordEncoder in constructor
-    public ZenUserService(ZenUserRepository zenUserRepository, Validator validator, PasswordEncoder passwordEncoder) {
+    public ZenUserService(ZenUserRepository zenUserRepository, ConfirmationEmailRepository confirmationEmailRepository, Validator validator, PasswordEncoder passwordEncoder, EmailService emailService, ConfirmationEmailService confirmationEmailService) {
         this.zenUserRepository = zenUserRepository;
+        this.confirmationEmailRepository = confirmationEmailRepository;
         this.validator = validator;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
+        this.confirmationEmailService = confirmationEmailService;
     }
 
     private void updateIfNotNull(Consumer<String> setter, String newValue) {
@@ -43,6 +57,43 @@ public class ZenUserService implements ZenUserInterface {
             user.setPassword(passwordEncoder.encode(newPassword));
         }
     }
+
+    private void sendConfirmationToken(ZenUserEntity user) {
+        String token = UUID.randomUUID().toString();
+        ConfirmationEmailEntity confirmationEmail = ConfirmationEmailEntity.builder()
+                .token(token)
+                .zenUserEntity(user)
+                .expiryDate(LocalDateTime.now().plusHours(expirationHours))
+                .build();
+
+        confirmationEmailRepository.save(confirmationEmail);
+        emailService.sendConfirmationEmail(user.getEmail(), token);
+    }
+
+    public boolean confirmUser(String token) {
+        Optional<ConfirmationEmailEntity> optionalToken = confirmationEmailRepository.findByToken(token);
+
+        if (optionalToken.isEmpty()) {
+            return false;
+        }
+
+        ConfirmationEmailEntity confirmationToken = optionalToken.get();
+
+        if (confirmationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            confirmationEmailRepository.delete(confirmationToken);
+            return false;
+        }
+
+        ZenUserEntity user = confirmationToken.getZenUserEntity();
+        user.setActive(true);
+        zenUserRepository.save(user);
+
+        // Delete the token and any other tokens for this user
+        confirmationEmailRepository.deleteByZenUserEntity_Id(user.getId());
+
+        return true;
+    }
+
 
     @Override
     public List<ZenUserEntity> getAllUsers() {
@@ -63,6 +114,18 @@ public class ZenUserService implements ZenUserInterface {
     public Optional<ZenUserEntity> getUserByEmail(String email) {
         return zenUserRepository.findByEmail(email);
     }
+
+    public void register(RegisterRequest request) {
+        ZenUserEntity newUser = ZenUserEntity.builder()
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .active(false)
+                .build();
+
+        zenUserRepository.save(newUser);
+        confirmationEmailService.generateAndSendToken(newUser);
+    }
+
 
     @Override
     public ZenUserEntity createUser(ZenUserInput userInput, PasswordEncoder encoder) {
@@ -104,6 +167,10 @@ public class ZenUserService implements ZenUserInterface {
                 .password(passwordEncoder.encode(userInput.getPassword()))
                 .active(true)
                 .build();
+
+        ZenUserEntity savedUser = zenUserRepository.save(userEntity);
+
+        sendConfirmationToken(savedUser);
 
         return zenUserRepository.save(userEntity);
     }

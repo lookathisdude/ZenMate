@@ -9,4 +9,5 @@ type Mutation {
     signUp(input: SignUpInput!): zenUser!
     updateUser(id: ID!, input: UpdateUserInput): zenUser!
     deleteUser(id: ID!): zenUser!
+    confirmUser(token: String!): Boolean!
 }

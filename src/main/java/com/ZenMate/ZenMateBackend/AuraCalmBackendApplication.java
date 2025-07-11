@@ -4,10 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class  ZenMateBackendApplication {
+public class AuraCalmBackendApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(ZenMateBackendApplication.class, args);
+		SpringApplication.run(AuraCalmBackendApplication.class, args);
 	}
 
 }
