@@ -23,3 +23,16 @@
  input DeleteUserInput {
      id: ID!
  }
+
+ type TimeBlock {
+     id: ID!
+     title: String!
+     position: Int!
+     userID: ID!
+ }
+
+
+ input TimeBlockInput {
+     id: ID!
+     position: Int!
+ }

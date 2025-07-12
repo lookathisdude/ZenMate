@@ -3,6 +3,9 @@ type Query {
     userById(id: ID!): zenUser
     userByUsername(username: String!): zenUser
     userByEmail(email: String!): zenUser
+
+    #TimeBlocks
+    userTimeBlocks(userId: ID!): [TimeBlock!]!
 }
 
 type Mutation {
@@ -10,4 +13,7 @@ type Mutation {
     updateUser(id: ID!, input: UpdateUserInput): zenUser!
     deleteUser(id: ID!): zenUser!
     confirmUser(token: String!): Boolean!
+
+    #TimeBlocks
+    updateTimeBlockPositions(timeBlocks: [TimeBlockInput!]!): Boolean!
 }
